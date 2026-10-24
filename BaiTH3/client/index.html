@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ thống Quản lý Sản phẩm - Kiến trúc SOA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <header class="app-header">
+            <div class="header-brand">
+                <div>
+                    <h1 class="brand-title">SOA Product Manager</h1>
+                    <p class="brand-subtitle">Hệ thống Quản lý Dịch vụ Sản phẩm</p>
+                </div>
+            </div>
+
+            <div class="header-nav">
+                <a href="http://localhost:5000" target="_blank" class="nav-link" id="link-auth-service">Mở Auth Service (5000)</a>
+                <a href="http://localhost:5001/docs" target="_blank" class="nav-link">Product API Docs</a>
+                <a href="http://localhost:5000/docs" target="_blank" class="nav-link">Auth API Docs</a>
+            </div>
+
+            <div class="header-status">
+                <div class="service-badges">
+                    <span id="badge-auth" class="status-badge checking">
+                        <span class="dot"></span> Auth Service (5000)
+                    </span>
+                    <span id="badge-product" class="status-badge checking">
+                        <span class="dot"></span> Product Service (5001)
+                    </span>
+                </div>
+
+                <div class="auth-box">
+                    <div id="user-info" class="user-info hidden">
+                        <span id="user-name" class="user-name">admin</span>
+                        <button id="btn-logout" class="btn btn-secondary btn-sm">Đăng xuất</button>
+                    </div>
+                    <button id="btn-open-login" class="btn btn-primary btn-sm">Đăng nhập</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="app-main">
+            <section class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Tổng sản phẩm</span>
+                        <span id="stat-total-count" class="stat-value">0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Tổng giá trị tồn kho</span>
+                        <span id="stat-total-value" class="stat-value">0 đ</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Tổng số lượng kho</span>
+                        <span id="stat-total-qty" class="stat-value">0</span>
+                    </div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-info">
+                        <span class="stat-label">Trạng thái xác thực</span>
+                        <span id="stat-jwt-status" class="stat-value text-muted">Chưa có token</span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="content-card">
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" id="input-search" placeholder="Tìm kiếm theo tên hoặc mô tả sản phẩm...">
+                    </div>
+
+                    <div class="toolbar-actions">
+                        <button id="btn-refresh" class="btn btn-secondary">Làm mới</button>
+                        <button id="btn-open-add" class="btn btn-primary">Thêm sản phẩm</button>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 70px;">ID</th>
+                                <th>Tên sản phẩm</th>
+                                <th>Mô tả</th>
+                                <th style="width: 140px;">Đơn giá</th>
+                                <th style="width: 100px;">Số lượng</th>
+                                <th style="width: 160px;">Ngày cập nhật</th>
+                                <th style="width: 170px; text-align: center;">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="product-table-body">
+                            <tr>
+                                <td colspan="7" class="loading-cell">
+                                    <div class="spinner"></div>
+                                    <span>Đang tải danh sách sản phẩm...</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="empty-state" class="empty-state hidden">
+                    <h3>Chưa có sản phẩm nào</h3>
+                    <p>Nhấn nút "Thêm sản phẩm" để tạo mới bản ghi vào cơ sở dữ liệu.</p>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Thêm / Chỉnh sửa sản phẩm -->
+    <div id="modal-product" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3 id="modal-product-title">Thêm sản phẩm mới</h3>
+                <button class="modal-close" data-close="modal-product">&times;</button>
+            </div>
+            <form id="form-product">
+                <input type="hidden" id="product-id">
+                <div class="form-group">
+                    <label for="product-name">Tên sản phẩm <span class="required">*</span></label>
+                    <input type="text" id="product-name" required placeholder="Nhập tên sản phẩm...">
+                </div>
+                <div class="form-group">
+                    <label for="product-description">Mô tả sản phẩm</label>
+                    <textarea id="product-description" rows="3" placeholder="Mô tả chi tiết sản phẩm..."></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="product-price">Giá sản phẩm (VNĐ) <span class="required">*</span></label>
+                        <input type="number" id="product-price" step="0.01" min="0" required placeholder="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="product-quantity">Số lượng kho <span class="required">*</span></label>
+                        <input type="number" id="product-quantity" min="0" required placeholder="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close="modal-product">Hủy</button>
+                    <button type="submit" id="btn-save-product" class="btn btn-primary">Lưu sản phẩm</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Xem chi tiết sản phẩm -->
+    <div id="modal-detail" class="modal-backdrop hidden">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h3>Chi tiết sản phẩm</h3>
+                <button class="modal-close" data-close="modal-detail">&times;</button>
+            </div>
+            <div class="detail-body">
+                <div class="detail-item">
+                    <span class="detail-label">ID sản phẩm:</span>
+                    <span id="detail-id" class="detail-val badge-id">#</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Tên sản phẩm:</span>
+                    <span id="detail-name" class="detail-val font-semibold">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Mô tả:</span>
+                    <p id="detail-description" class="detail-val text-desc">-</p>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Đơn giá:</span>
+                    <span id="detail-price" class="detail-val price-tag">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Số lượng tồn kho:</span>
+                    <span id="detail-quantity" class="detail-val">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Ngày tạo:</span>
+                    <span id="detail-created-at" class="detail-val">-</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Cập nhật lần cuối:</span>
+                    <span id="detail-updated-at" class="detail-val">-</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-close="modal-detail">Đóng</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Đăng nhập Auth Service -->
+    <div id="modal-login" class="modal-backdrop hidden">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-header">
+                <h3>Đăng nhập xác thực</h3>
+                <button class="modal-close" data-close="modal-login">&times;</button>
+            </div>
+            <form id="form-login">
+                <p class="modal-hint">Xác thực qua Auth Service (Port 5000) để lấy JWT Token truy cập hệ thống.</p>
+                <div class="form-group">
+                    <label for="login-username">Tên người dùng</label>
+                    <input type="text" id="login-username" value="admin" required placeholder="admin">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Mật khẩu</label>
+                    <input type="password" id="login-password" value="admin123" required placeholder="admin123">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-close="modal-login">Hủy</button>
+                    <button type="submit" id="btn-submit-login" class="btn btn-primary">Xác thực ngay</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Thông báo -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>

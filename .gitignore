@@ -1,0 +1,22 @@
+# Loại trừ gift-app và file liên quan
+gift-app/
+/M*20_10*.html
+
+# Loại trừ file nén ở thư mục gốc
+/*.zip
+/*.rar
+
+# Python Virtual Environment & Cache
+**/venv/
+**/__pycache__/
+*.py[cod]
+*$py.class
+
+# Node modules
+**/node_modules/
+
+# IDE & OS files
+.vscode/
+.idea/
+Thumbs.db
+.DS_Store
